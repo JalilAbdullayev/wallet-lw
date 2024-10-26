@@ -2,33 +2,34 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\CategoryResource\Pages\ManageCategories;
-use App\Filament\Resources\CategoryResource\RelationManagers;
-use App\Models\Category;
+use App\Filament\Resources\AccountResource\Pages;
+use App\Filament\Resources\AccountResource\RelationManagers;
+use App\Models\Account;
+use Filament\Forms;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
-use Filament\Tables\Actions\BulkActionGroup;
-use Filament\Tables\Actions\DeleteAction;
-use Filament\Tables\Actions\DeleteBulkAction;
-use Filament\Tables\Actions\EditAction;
+use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 
-class CategoryResource extends Resource {
-    protected static ?string $model = Category::class;
+class AccountResource extends Resource {
+    protected static ?string $model = Account::class;
 
-    protected static ?string $navigationIcon = 'heroicon-s-folder';
+    protected static ?string $navigationIcon = 'heroicon-s-wallet';
 
     public static function form(Form $form): Form {
         return $form->schema([
             TextInput::make('title')->required()->maxLength(255)->debounce('500ms')
                 ->afterStateUpdated(fn(Set $set, ?string $state) => $set('slug', Str::slug($state))),
             TextInput::make('slug')->maxLength(255)->unique(ignoreRecord: true),
+            TextInput::make('total')->numeric()->required(),
             Toggle::make('status')->default(true),
         ]);
     }
@@ -37,22 +38,23 @@ class CategoryResource extends Resource {
         return $table->columns([
             TextColumn::make('order')->label('#')->sortable(),
             TextColumn::make('title')->searchable()->sortable(),
+            TextColumn::make('total')->sortable()->searchable(),
             ToggleColumn::make('status')
         ])->reorderable('order')->defaultSort('order')->filters([
             //
-        ])->extremePaginationLinks()->paginatedWhileReordering()->actions([
-            EditAction::make(),
-            DeleteAction::make(),
+        ])->actions([
+            Tables\Actions\EditAction::make(),
+            Tables\Actions\DeleteAction::make(),
         ])->bulkActions([
-            BulkActionGroup::make([
-                DeleteBulkAction::make(),
+            Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\DeleteBulkAction::make(),
             ]),
         ]);
     }
 
     public static function getPages(): array {
         return [
-            'index' => ManageCategories::route('/'),
+            'index' => Pages\ManageAccounts::route('/'),
         ];
     }
 }
